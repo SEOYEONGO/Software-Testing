@@ -1,0 +1,546 @@
+Abstract. Formal Concept Analysis (FCA) is a theoretical framework which structures a set of objects described by properties. In order to migrate software product variants which are considered similar into a product line, it is essential to identify the common and the optional features between the software product variants. In this paper, we present an approach for feature location in a collection of software product variants based on FCA. In order to validate our approach we applied it on a case study based on ArgoUML. The results of this evaluation showed that all of the features were identified.
+
+ 
+
+요약.
+
+FCA(Formal Concept Analysis)는, 속성으로 설명되는 객체들의 집합을 구조화하는 이론적인 프레임워크다.
+
+유사한 것으로 간주되는 소프트웨어 product variants를 product line으로 옮기기 위해서는,
+
+software product variants 간의 공통 기능과 선택적 기능을 식별하는 것이 중요하다.
+
+ 
+
+이 문서에서 우리는 FCA에 기반한 software product variants 컬렉션의 feature location에 대한 접근 방식을 제시한다.
+
+우리의 접근 방식을 검증하기 위해서 ArgoUML을 기반으로 한 사례 연구에 적용했다. 이 평가의 결과는 모든 기능들이 식별되었음을 보여준다. 
+
+1 Introduction
+
+ 
+
+Software product variants often evolve from an initial product developed for and successfully used by the first customer. 
+
+These product variants usually share some common features 
+
+but they are also different from one another 
+
+due to subsequent customization to meet specific requirements of different customers [1].
+
+ 
+
+소프트웨어 제품 변형은 종종 첫번째 고객을 위해 개발되어 성공적으로 사용된 초기 제품에서 발전한다.
+
+이러한 제품 변형은 일반적으로 몇 가지 공통 기능을 공유하지만,
+
+다른 고객들의 특정 요구 사항을 충족하는 후속적인 맞춤화(사용자 지정) 때문에 서로 다르다. 
+
+ 
+
+
+As the number of features and the number of product variants grows,
+
+  it is worth reengineering product variants into a Software Product Line (SPL) for systematic reuse. 
+
+ 
+
+피쳐(기능)의 수와 제품 변형의 수가 증가함에 따라,
+
+체계적인 재사용을 위해
+
+제품 변형에서 SPL (Software Product Line)으로 리엔지니어링할 필요가 있다.
+
+ 
+
+To switch to Software Product Line Engineering (SPLE) starting from a collection of existing variants,
+
+  the first step is to mine a feature model that describes the SPL.
+
+ 
+
+기존 변형 컬렉션에서 SPLE(Software Product Line Engineering)으로 전환하기 위한
+
+첫번째 단계는, SPL을 설명하는 피쳐 모델을 마이닝하는 것이다. (mine: 채굴하다. 여기서 마이닝의 정확한 의미?)
+
+ 
+
+ 
+
+This further implies to identify the software family’s common and variable features.
+
+Manual reverse engineering of the feature model for the existing software variants is time-consuming, error-prone, and requires substantial effort [2].
+
+ 
+
+ 
+
+이는 또한 소프트웨어 제품군의 공통 및 가변 기능을 식별하는 것을 의미한다.
+
+기존 소프트웨어 변형에 대한 피쳐 모델의 
+
+수동 역공학은 시간이 많이 걸리고, 에러가 발생하기 쉬우며, 상당한 노력이 필요하다.
+
+ 
+
+ 
+
+Thus, we propose in this paper a new approach for feature location in a collection of software product variants.
+
+Our approach is based on the identification of the implementation of these features among object-oriented (OO) elements of the source code. These OO elements constitute the initial search space. 
+
+ 
+
+따라서 이 백서(문서)에서 우리는 소프트웨어 제품 변형 컬렉션의 피쳐 로케이션에 대한 새로운 접근 방법을 제안한다.
+
+우리의 접근 방식은 소스 코드의 객체 지향(OO) 요소 사이에서 이러한 피쳐의 구현을 식별하는 것을 기반으로 한다.
+
+이러한 OO 요소는 초기의 검색 공간을 구성한다.
+
+ 
+
+ 
+
+We rely on Formal Concept Analysis (FCA) to reduce this search space by identifying maximal subsets of features shared by maximal subsets of product variants and organizing these subsets by inclusion. 
+
+ 
+
+우리는 FCA(Formal Concept Analysis)을 사용하여 무언가를 식별하고 무언가를 구성함으로써 이 검색 공간을 줄인다.
+
+여기서 식별하는 것은 제품 변형의 최대 하위 집합이 공유하는 피쳐의 / 최대 하위 집합을 식별하는 것이고, 포함되는 이러한 하위집합을 구성한다고 말하고 있다.
+
+ 
+
+ 
+
+Our approach is detailed in the remainder of this paper as follows. 
+
+Section 2 presents FCA, and Section 3 outlines our approach.
+
+Section 4 discusses our implementation and evaluation.
+
+Section 5 presents the related work.
+We conclude and draw perspectives for this work in Section 6.
+
+ 
+
+우리의 접근 방식은 이 백서의 나머지 부분에서 다음과 같이 자세히 설명되어 있다.  
+
+Section 2는 FCA를,
+
+Section 3은 우리의 접근 방식을 말한다.
+
+Section 4는 우리의 구현 및 평가에 대해 설명하고,
+
+Section 5는 관련 작업을 제시한다.
+
+Section 6에서 이 작업에 대한 결론을 내리고 관점을 도출한다.
+
+ 
+
+2 Formal Concept Analysis (FCA)
+
+Galois lattices and concept lattices [3] are core structures of a data analysis framework (FCA) 
+
+for extracting an ordered set of concepts from a dataset, 
+
+called a formal context, composed of objects described by attributes. 
+
+ 
+
+Galois 격자와 개념 격자는, 데이터 분석 프레임 워크인 FCA에서 핵심적인 구조이다.
+
+(FCA는, 속성이라고 불리는 객체들로 구성된 -formal context라고 불리는-
+
+(여기서 formal context는 아마도 정렬된 개념 셋을 가리키는 듯 하다.) 
+
+데이터 셋에서 정렬된 개념 셋을 추출하기 위한 데이터 분석 프레임 워크이다.)
+
+ 
+
+A formal context is a triple K = (O,A,R) where O and A are sets (objects and attributes, respectively) and R is a binary relation, i.e., R ⊆ O×A. 
+
+ 
+
+formal context는 삼중 K = (O,A,R)이며, 여기서 O와 A는 -각각 객체, 속성임- 집합이며, R은 이진 관계이다.
+
+                        (R ⊆ O×A)
+
+ 
+
+An example of formal context is provided in Figure 1 (left). 
+
+formal context의 예는 그림 1(왼쪽)에 나와 있다.
+
+ 
+
+ 
+
+A formal concept is a pair (E, I) composed of an object set E ⊆ O and its shared attribute set I ⊆ A. 
+
+E = {o ∈ O|∀a ∈ I, (o, a) ∈ R} is the extent of the concept, 
+
+while I = {a ∈ A|∀o ∈ E, (o, a) ∈ R} is the intent of the concept.
+
+Given a formal context K = (O,A,R), and two formal concepts C1 = (E1, I1) and C2 = (E2, I2) of K, the concept specialization order ≤s is defined by C1 ≤s C2 if and only if E1 ⊆ E2 (and equivalently I2 ⊆ I1).
+C1 is called a sub-concept of C2. C2 is called a super-concept of C1. 
+
+ 
+
+공식적인 개념은
+
+객체 셋(E ⊆ O)과
+
+공유 속성 셋 (I ⊆ A)으로
+
+구성된 쌍 (E, I)이다.
+
+E = {o ∈ O|∀a ∈ I, (o, a) ∈ R} 은 개념의 범위, 
+
+I = {a ∈ A|∀o ∈ E, (o, a) ∈ R} 은 개념의 의도이다.
+
+ 
+
+formal context인 K = (O,A,R)과 
+
+K의 두 개의 formal concepts인 C1 = (E1, I1)과 C2 =(E2, I2) 가 주어지면, 
+
+개념의 특수화된 순서 ≤s는 C1 ≤s C2로 정의된다.  (단, E1 ⊆ E2(및 I2 ⊆ I1) 인 경우에만)
+
+C1은 C2의 하위 개념이라고 한다. C2는 C1의 수퍼 개념이라고 한다.
+
+ 
+
+ 
+
+Let CK be the set of all concepts of a formal context K. 
+
+This set of concepts provided with the specialization order (CK, ≤s) has a lattice structure, 
+
+and is called the concept lattice associated with K. 
+
+ 
+
+CK를 formal context K의 모든 개념의 집합이라고 가정하자.
+
+특수화된 순서(CK, ≤s)와 함께 제공되는 개념의 집합은/ 격자 구조를 가지며/ K와 관련된 concept lattice라고 한다. 
+
+ 
+
+ 
+
+In our approach, we will consider the AOCposet (for Attribute-Object-Concept poset), which is the sub-order of (CK, ≤s) restricted to object-concepts and attribute-concepts.  An object-concept (resp. attribute-concept) is the lowest concept (resp. a greatest concept) where an object (resp. an attribute) appears. 
+In AOC-poset representations, objects are represented only in their introducer concept (and inherited by superconcepts), while attributes are represented only in their introducer concept (and inherited by their subconcepts), meaning that no concept should have empty object part and empty attribute part.
+
+ 
+
+우리의 접근 방식에서는,
+
+객체 개념 및 속성 개념으로 제한된/ 
+
+(CK, ≤s)의 하위 순서인/ AOCposet(속성-객체-개념 부분순서 집합)를 고려할 것이다.
+
+ 
+
+객체 개념은 객체가 나타나는 가장 낮은 개념이다.
+
+(속성 개념은 속성이 나타나는 가장 큰 개념이다.)
+
+ 
+
+AOC-poset 표현에서는,
+
+객체들은 도입자 개념으로만 표현되고, 수퍼개념에 의해 상속된다.
+
+속성은 도입자 개념으로만 표현되고, 이들의 하위 개념으로 상속된다.
+
+개념이 빈 객체 부분과 빈 속성을 가져서는 안됨을 의미한다.
+
+ 
+
+3 Our Approach to Feature Location
+
+This section provides main concepts and hypotheses used in our approach.
+
+이 섹션에서는 우리의 접근 방식에 사용된 주요 개념과 가설을 제공한다.
+
+ 
+
+3.1 Goal and Core Assumptions 
+
+목표 및 핵심 가정
+
+ 
+
+The general objective of our work is to identify a feature model for a collection of software product variants based on the static analysis of their source code. 
+
+ 
+
+본 연구의 일반적인 목표는 
+
+소스코드의 정적 분석을 기반으로 소프트웨어 제품 변형 컬렉션의 피쳐 모델을 식별하는 것이다.
+
+ 
+
+We consider that ”a feature is a prominent or distinctive and user visible aspect, quality, or characteristic of a software system or systems” [4]. 
+
+ 
+
+우리는 
+
+"피쳐는
+
+소프트웨어 시스템 또는 시스템의
+
+두드러진 또는 독특하고
+
+사용자가 볼 수 있는 측면, 품질 또는 특성"
+
+이라고 생각한다.
+
+ 
+
+We adhere to the classification given by [4] which distinguishes three categories of features: functional, operational and presentation features. 
+
+ 
+
+우리는 
+
+피쳐의 세가지 범주인
+
+기능적인 피쳐, 선택적인 피쳐, 보여지는 피쳐(presentation feature)를 구분하는 
+
+[4] 의 분류를 준수한다.
+
+Our work focuses on the identifying of functional features. 
+In our approach we deal with software systems where the functional features are implemented at the programming language level (i.e., source code). 
+
+ 
+
+우리의 작업은 기능적인 피쳐를 식별하는 것에 중점을 두고 있다.
+
+우리의 접근 방식에서는,
+
+기능적인 피쳐들이
+
+프로그래밍 언어 수준 (즉, 소스코드)에서 구현되는
+
+소프트웨어 시스템을 다룬다.
+
+
+The functional features are implemented by object oriented building elements (OBEs) 
+
+such as packages, classes, attributes, methods or method body elements (local variable, attribute access, method invocation). 
+
+ 
+
+기능적인 피쳐들은
+
+(패키지, 클래스, 속성, 메소드 또는 메소드 바디 요소(지역 변수, 속성 access, 메소드 호출)과 같은)
+
+객체지향 빌딩 요소(OBE)에 의해 구현된다.
+
+ 
+
+We consider that a feature corresponds to exactly one set of OBEs. 
+
+This means that a feature always has the same implementation in all products where it is present.
+We also consider that feature implementations may overlap: a given OBE can be shared between several features’ implementations. 
+
+In this paper, we name such shared OBE as a junction.
+
+ 
+
+우리는 
+
+피쳐가 정확히 하나의 OBE 셋에 대응된다
+
+고 생각한다.
+
+ 
+
+즉, 피쳐는
+
+현재 존재하는 모든 제품에 대해서
+
+항상 동일한 구현을 갖는다.
+
+ 
+
+우리는 또한
+
+피쳐의 구현은 겹칠 수 있으므로 특정 OBE는 여러 피쳐의 구현들 간에 공유될 수 있다
+
+고 생각한다.
+
+ 
+
+이 문서에서 우리는 이러한 공유 OBE를 junction(연결점, 접합)이라고 명명한다.
+
+ 
+
+3.2 Features versus Object-Oriented Building Elements
+
+ 
+
+Feature location in a collection of software variants consists in identifying a group of OBEs that constitutes its implementation. 
+
+ 
+
+소프트웨어 변형 컬렉션의 피쳐 로케이션은
+
+피쳐의 구현을 구성하는 OBE 그룹을 식별하는 것으로 구성된다.
+
+ 
+
+
+This group of OBEs must either be present in all variants (case of a common feature) or in some but not all variants (case of an optional feature). 
+
+ 
+
+이 OBE 그룹은
+
+(공통 피쳐의 경우) 모든 변형 또는
+
+(선택 피쳐의 경우) 일부 변형에 있어야 한다.
+
+ 
+
+Thus, the initial search space for the feature location process is composed of all the subsets of OBEs of existing product variants. 
+
+ 
+
+따라서 피쳐 로케이션 프로세스의 초기 검색 공간은 기존 제품 변형의 OBE의 모든 하위 집합으로 구성된다.
+
+ 
+
+As the number of OBEs is big, a strategy must be designed to reduce the search space.
+Our proposal consists in dividing the OBE set in specific subsets: the common feature set – also called common block (CB) – and several optional feature sets (Block of Variations, denoted as BVs).
+
+ 
+
+OBE의 수가 많기 때문에, 검색 공간을 줄이기 위한 전략을 설계해야 한다.
+
+우리의 제안은
+
+OBE 셋을 특정 하위 집합으로 나누는 것인데, 
+
+ 
+
+특정 하위 집합은 다음과 같다.
+
+- 공통 피쳐 셋(공통 블럭, CB) 및 여러 선택적 피쳐 셋(변형 블럭, BV)
+
+ 
+
+ 
+
+Optional (resp. common) features appear in some but not all (resp. all) variants, they are implemented by OBEs that appear in some but not in all (resp. all) variants.
+
+ 
+
+선택적 피쳐는 일부 변형에는 나타나지만, 일부 변형에는 나타나지 않고,
+
+                   일부 변형에 나타나지만, 일부 변형에는 나타나지 않는 OBE에 의해 구현된다. 
+
+공통 피쳐는 모든 변형에 나타나고, 모든 변형에 나타나는 OBE에 의해 구현된다.
+
+ 
+
+
+This is realized by building a formal context, which is composed of software variants (objects of the formal context) described by their OBEs (attributes of the formal context). 
+
+ 
+
+이는 어떻게 실현되냐면,
+
+OBE(formal context의 속성)에 의해 설명된, 소프트웨어 변형(fomal context의 객체)이 있는데,
+
+그 소프트웨어 변형으로 구성된 formal conext를 구축함으로써 실현된다.
+
+ 
+
+
+The relation associates a software variant with the OBEs that appear in its source code. 
+
+The corresponding AOC-poset is then calculated.
+
+ 
+
+관계는
+
+소프트웨어 변형을 
+
+소스코드에 나타나는 OBE와 연결한다.
+
+그런 다음 해당되는 AOC-poset가 계산된다.
+
+ 
+
+A concept intent (containing the concept attributes) represents OBEs common to two or more variants (the objects included in the concept extent). 
+
+ 
+
+개념의 의미, 의도는 둘 이상의 변형에 공통적인 OBE를 나타내는 것이다.
+
+(개념 속성을 포함하여, 개념의 의미, 의도를 살펴보자면,
+
+둘 이상의 변형(개념 범위에 포함된 객체)에 공통적인 OBE를 나타내는 것이다. 
+
+
+As the concepts of the AOC-posets are ordered, the intent of the most general (i.e., top) concept gathers the OBEs that are common to all products.  They constitute the CB. 
+
+ 
+
+AOC-posets의 개념이 정렬됨에 따라,
+
+가장 일반적인(즉, 최상위) 개념의 의도는 
+
+모든 제품에 공통적인 OBE를 수집하는 것이다.
+
+그들은 CB를 구성한다.
+
+ 
+
+The intents of the remaining concepts are BVs. A concept intent corresponds to the implementation of one or more features. 
+
+ 
+
+나머지 개념의 의도는 BV이다.
+
+개념의 의도는/ 하나 이상의 피쳐의 구현에 해당한다.
+
+ 
+
+
+As an illustrative example, we consider four text editor software variants.
+Editor 1 supports core text editing features: open, close, and print a file. 
+Editor 2 has the core text editing features and a new select all feature. 
+Editor 3 supports copy and paste features, together with the core ones. 
+Editor 4 supports select all, copy and paste features, together with the core ones.
+
+ 
+
+예를 들어 네가지 텍스트 편집기 소프트웨어 변형을 고려해보자.
+
+Editor 1은 파일 열기, 닫기, 인쇄와 같은 핵심적인 텍스트 편집 피쳐를 지원한다.
+
+Editor 2는 핵심 텍스트 편집 피쳐와 모든 것을 선택하는 새로운 피쳐가 있다.
+
+Editor 3은 핵심 피쳐와 함께 복사 및 붙여넣기 피쳐를 지원한다.
+
+Editor 4는 핵심 피쳐와 함께 모두 선택, 복사 및 붙여넣기 피쳐를 지원한다.
+
+ 
+
+ Figure 1 shows the formal context for the text editor variants and the AOC-poset for this formal context which shows the CB and BVs.
+
+ 
+
+그림 1은
+
+텍스트 편집기 변형에 대한 formal context와 
+
+CB 및 BV를 보여주는 이 formal context에 대한 AOC-poset을 보여준다. 
+
+
